@@ -177,15 +177,6 @@ class _CoursesPageState extends State<CoursesPage> {
                                     )
                                   ],
                                 ),
-                                // Container(
-                                //   height: h * 0.06,
-                                //   width: h * 0.06,
-                                //   decoration: const BoxDecoration(
-                                //       image: DecorationImage(
-                                //           image: AssetImage("assets/images/person.jpg"),
-                                //           fit: BoxFit.cover),
-                                //       borderRadius: BorderRadius.all(Radius.circular(8.0))),
-                                // ),
                                 Row(
                                   children: [
                                     IconButton(

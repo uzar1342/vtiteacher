@@ -16,12 +16,8 @@ class Module extends StatefulWidget {
 
 class _ModuleState extends State<Module> {
   final TextEditingController _searchController = TextEditingController();
-  bool isLoading = false;
   bool showSearch = false;
-  var subCourseList ;
- // var ak=["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16"];
-  var ak=[];
-  fetchCourseList() async {
+ Future<dynamic> fetchCourseList() async {
     Dio dio=Dio();
     var formData = FormData.fromMap({
       'sub_course_id': widget.id
@@ -29,45 +25,44 @@ class _ModuleState extends State<Module> {
     print(formData.fields);
     var response = await dio.post('http://training.virash.in/showModulesAndDetails', data: formData);
     if (response.statusCode == 200) {
-      int i, len =int.parse(response.data["data"][0].keys.length.toString());
-
-      for(i=1;i<=len;i++)
-      {
-        ak.add(i.toString());
-      }
-      subCourseList = response.data;
-        print(subCourseList);
-      setState(() {
-        isLoading = true;
-      });
+        print(response.data);
+      return response.data;
     } else {
       Fluttertoast.showToast(msg: "Please try again later");
-      setState(() {
-        isLoading = true;
-      });
       return response.data;
     }
   }
   @override
   void initState() {
-    fetchCourseList();
     super.initState();
   }
   @override
   Widget build(BuildContext context) {
     double h = MediaQuery.of(context).size.height;
     double w = MediaQuery.of(context).size.width;
-
     return Scaffold(
-      body: isLoading?Container(
-        child: subCourseList!=null?SafeArea(
-          child: subCourseList["data"].length>0?Container(
+      body: Container(
+        child: SafeArea(
+          child:Container(
             padding: const EdgeInsets.all(15.0),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  showSearch
-                      ? Row(
+            child: FutureBuilder<dynamic>(
+              builder: (ctx, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  // If we got an error
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        '${snapshot.error} occurred',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    );
+
+                    // if we got our data
+                  } else if (snapshot.hasData) {
+                    return Column(
+                      children: [
+                        showSearch
+                            ? Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             Container(
@@ -77,7 +72,7 @@ class _ModuleState extends State<Module> {
                                 elevation: 4,
                                 shape: const RoundedRectangleBorder(
                                     borderRadius:
-                                        BorderRadius.all(Radius.circular(12))),
+                                    BorderRadius.all(Radius.circular(12))),
                                 child: TextFormField(
                                   controller: _searchController,
                                   onChanged: (value) {
@@ -102,7 +97,7 @@ class _ModuleState extends State<Module> {
                                       ),
                                       hintText: "Search",
                                       hintStyle:
-                                          const TextStyle(color: Colors.black26),
+                                      const TextStyle(color: Colors.black26),
                                       filled: true,
                                       fillColor: Colors.white,
                                       border: const OutlineInputBorder(
@@ -129,7 +124,7 @@ class _ModuleState extends State<Module> {
                                     ))),
                           ],
                         )
-                      : Row(
+                            : Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             InkWell(
@@ -138,14 +133,14 @@ class _ModuleState extends State<Module> {
                               },
                               child: Container(
                                 margin: const EdgeInsets.only(
-                                    // top: 10.0,
-                                    // left: 15.0,
-                                    ),
+                                  // top: 10.0,
+                                  // left: 15.0,
+                                ),
                                 //padding: const EdgeInsets.only(left: 5.0),
                                 height: h * 0.05,
                                 width: h * 0.05,
                                 decoration: BoxDecoration(
-                                    // color: primaryColor,
+                                  // color: primaryColor,
                                     border: Border.all(
                                         color: Colors.black26, width: 1.0),
                                     borderRadius: const BorderRadius.all(
@@ -181,20 +176,16 @@ class _ModuleState extends State<Module> {
                             ),
                           ],
                         ),
-                  SizedBox(
-                    height: h * 0.02,
-                  ),
-                  Container(
-                    child:
-                    FutureBuilder<dynamic>(
-                      builder: (ctx, snapshot) {
+                        SizedBox(
+                          height: h * 0.02,
+                        ),
                         ListView.builder(
                             scrollDirection: Axis.vertical,
                             primary: false,
                             shrinkWrap: true,
-                            itemCount: snapshot.data["data"][0].keys.length,
+                            itemCount: snapshot.data["data"].length,
                             itemBuilder: (context, index) {
-                              if (subCourseList["data"][0]["189"]['module_name']
+                              if (snapshot.data["data"][index]["module_name"]
                                   .toString()
                                   .toLowerCase()
                                   .contains(_searchController.text.toLowerCase())) {
@@ -224,14 +215,14 @@ class _ModuleState extends State<Module> {
                                                     children: [
                                                       Expanded(
                                                         child: Text(
-                                                          "Section ${index + 1} - ${subCourseList["data"][0][ak[index]]['module_name']} ",
+                                                          "Section ${index + 1} - ${snapshot.data["data"][index]["module_name"]} ",
                                                           style: const TextStyle(
                                                               color: Colors.black,
                                                               fontWeight:
                                                               FontWeight.w500),
                                                         ),
                                                       ),
-                                                      subCourseList["data"][0][ak[index]]["details"]
+                                                      snapshot.data["data"][index]["details"]
                                                           .isEmpty
                                                           ? Container()
                                                           : ExpandableIcon(
@@ -255,7 +246,7 @@ class _ModuleState extends State<Module> {
                                               ),
                                               collapsed: Container(),
                                               expanded: buildList(
-                                                  subCourseList["data"][0][ak[index]]["details"]),
+                                                  snapshot.data["data"][index]["details"]),
                                             ),
                                           ],
                                         ),
@@ -264,31 +255,21 @@ class _ModuleState extends State<Module> {
                               } else {
                                 return Container();
                               }
-                            });
-                        // Displaying LoadingSpinner to indicate waiting state
-                        return Center(
-                        child: CircularProgressIndicator(),
-                        );
-                      },
-
-                      // Future that needs to be resolved
-                      // inorder to display something on the Canvas
-                      future: fetchCourseList(),
-                    ),
-
-
-
-
-
-
-                  )
-                ],
-              ),
+                            }),
+                      ],
+                    );
+                  }
+                }
+                // Displaying LoadingSpinner to indicate waiting state
+                return Center(
+                child: CircularProgressIndicator(),
+                );
+              },
+              future: fetchCourseList(),
             ),
-          ): Center(child: Image.asset("assets/images/no_data.png")),
-        ):Container(),
-      ):Center(child: CircularProgressIndicator()),
-    );
+          )),
+        ),
+      );
   }
 
   buildItem(var i, int index) {
